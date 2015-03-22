@@ -83,22 +83,24 @@ func (m *MongoStore) New(r *http.Request, name string) (*sessions.Session, error
 	session.IsNew = true
 
 	var err error
+	var errToken error
+	var val string
 
-	if cook, errToken := m.Token.GetToken(r, name); errToken == nil {
-
-		err = securecookie.DecodeMulti(name, cook, &session.ID, m.Codecs...)
-
-		if err == nil {
-
-			err = m.load(session)
-
-			if err == nil {
-				session.IsNew = false
-			} else {
-				err = nil
-			}
-		}
+	if val, errToken = m.Token.GetToken(r, name); errToken != nil {
+		goto done
 	}
+
+	if err = securecookie.DecodeMulti(name, val, &session.ID, m.Codecs...); err != nil {
+		goto done
+	}
+
+	if err = m.load(session); err != nil {
+		goto done
+	}
+
+	session.IsNew = false
+
+done:
 
 	return session, err
 }
@@ -124,8 +126,7 @@ func (m *MongoStore) Save(r *http.Request, w http.ResponseWriter, session *sessi
 		return err
 	}
 
-	encoded, err := securecookie.EncodeMulti(session.Name(), session.ID,
-		m.Codecs...)
+	encoded, err := securecookie.EncodeMulti(session.Name(), session.ID, m.Codecs...)
 	if err != nil {
 		return err
 	}
@@ -144,15 +145,14 @@ func (m *MongoStore) load(session *sessions.Session) error {
 	defer dbSess.Close()
 
 	c := dbSess.DB("").C(m.collection)
-
 	s := Session{}
+
 	err := c.FindId(bson.ObjectIdHex(session.ID)).One(&s)
 	if err != nil {
 		return err
 	}
 
-	if err := securecookie.DecodeMulti(session.Name(), s.Data, &session.Values,
-		m.Codecs...); err != nil {
+	if err := securecookie.DecodeMulti(session.Name(), s.Data, &session.Values, m.Codecs...); err != nil {
 		return err
 	}
 
@@ -178,8 +178,7 @@ func (m *MongoStore) upsert(session *sessions.Session) error {
 		modified = time.Now()
 	}
 
-	encoded, err := securecookie.EncodeMulti(session.Name(), session.Values,
-		m.Codecs...)
+	encoded, err := securecookie.EncodeMulti(session.Name(), session.Values, m.Codecs...)
 	if err != nil {
 		return err
 	}
