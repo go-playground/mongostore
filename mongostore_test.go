@@ -65,7 +65,7 @@ func (s *MySuite) SetUpSuite(c *C) {
 
 }
 
-func (ms *MySuite) TestStructOnlyValidation(c *C) {
+func (ms *MySuite) TestMongoStoreCoreFuntionality(c *C) {
 
 	store := mongostore.NewMongoStore(dbSession, "sessions", 3600, true, []byte(mySecretKeyString))
 
