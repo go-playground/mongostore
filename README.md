@@ -3,6 +3,7 @@
 Gorilla's session store implementation using MongoDB
 
 [![Build Status](https://travis-ci.org/joeybloggs/mongo-session-store.svg?branch=v1)](https://travis-ci.org/joeybloggs/mongo-session-store)
+[![GoDoc](https://godoc.org/gopkg.in/joeybloggs/mongo-session-store.v1?status.svg)](https://godoc.org/gopkg.in/joeybloggs/mongo-session-store.v1)
 
 Installation
 ============
@@ -36,4 +37,4 @@ however, there will also be a v2-development brach even though v2 doesn't exist 
 
 License
 =========
-Distributed under MIT license
+Distributed under MIT License, see license file in code for details.
