@@ -1,5 +1,4 @@
 # mongo-session-store
-======================
 Gorilla's session store implementation using MongoDB
 
 [![Build Status](https://travis-ci.org/joeybloggs/mongo-session-store.svg?branch=v1)](https://travis-ci.org/joeybloggs/mongo-session-store)
