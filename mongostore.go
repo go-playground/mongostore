@@ -11,16 +11,22 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+const (
+	lastAccessedField = "lastAccessed"
+)
+
 var (
 	// ErrInvalidID error when Session ID is invalid
 	ErrInvalidID = errors.New("Invalid Session ID")
+	// ErrInvalidAccessTime error when the Last Accessed Time is invalid
+	ErrInvalidAccessTime = errors.New("Invalid Last Accessed Time")
 )
 
 // Session struct stored in MongoDB
 type Session struct {
-	ID       bson.ObjectId `bson:"_id,omitempty"`
-	Data     string
-	Modified time.Time
+	ID           bson.ObjectId `bson:"_id,omitempty"`
+	Data         string        `bson:"data"`
+	LastAccessed *time.Time    `bson:"lastAccessed"`
 }
 
 // MongoStore struct contains options and variables to interact with session settings
@@ -55,7 +61,7 @@ func NewMongoStore(s *mgo.Session, collectionName string, maxAge int, ensureTTL 
 
 	if ensureTTL {
 		c.EnsureIndex(mgo.Index{
-			Key:         []string{"modified"},
+			Key:         []string{"lastAccessed"},
 			Background:  true,
 			Sparse:      true,
 			ExpireAfter: time.Duration(maxAge) * time.Second,
@@ -101,7 +107,6 @@ func (m *MongoStore) New(r *http.Request, name string) (*sessions.Session, error
 	session.IsNew = false
 
 done:
-
 	return session, err
 }
 
@@ -145,10 +150,17 @@ func (m *MongoStore) load(session *sessions.Session) error {
 	defer dbSess.Close()
 
 	c := dbSess.DB("").C(m.collection)
-	s := Session{}
+	var s *Session
 
 	err := c.FindId(bson.ObjectIdHex(session.ID)).One(&s)
 	if err != nil {
+		return err
+	}
+
+	accessed := time.Now().UTC()
+	s.LastAccessed = &accessed
+
+	if err = c.UpdateId(s.ID, s); err != nil {
 		return err
 	}
 
@@ -165,17 +177,17 @@ func (m *MongoStore) upsert(session *sessions.Session) error {
 		return ErrInvalidID
 	}
 
-	var modified time.Time
+	var accessed time.Time
 
-	if val, ok := session.Values["modified"]; ok {
+	if val, ok := session.Values[lastAccessedField]; ok {
 
-		modified, ok = val.(time.Time)
+		accessed, ok = val.(time.Time)
 
 		if !ok {
-			return errors.New("mongostore: invalid modified value")
+			return ErrInvalidAccessTime
 		}
 	} else {
-		modified = time.Now()
+		accessed = time.Now().UTC()
 	}
 
 	encoded, err := securecookie.EncodeMulti(session.Name(), session.Values, m.Codecs...)
@@ -184,9 +196,9 @@ func (m *MongoStore) upsert(session *sessions.Session) error {
 	}
 
 	s := Session{
-		ID:       bson.ObjectIdHex(session.ID),
-		Data:     encoded,
-		Modified: modified,
+		ID:           bson.ObjectIdHex(session.ID),
+		Data:         encoded,
+		LastAccessed: &accessed,
 	}
 
 	dbSess := m.dbSession.Copy()

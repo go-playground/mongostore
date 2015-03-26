@@ -1,5 +1,5 @@
 /*
-Mongo Session Store follows the Gorilla Session implementation
+Package mongostore follows the Gorilla Session implementation
 
 Reason for creation over using an existing library
 	When the MongoDB database the sessions were being stored in was not reachable
