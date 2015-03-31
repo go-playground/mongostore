@@ -11,7 +11,7 @@ services:
 
 before_script:
 - go get gopkg.in/check.v1
-- sleep 15
+- sleep 7
 
 go:
   - 1.2

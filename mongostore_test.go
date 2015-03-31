@@ -67,7 +67,11 @@ func (s *MySuite) SetUpSuite(c *C) {
 
 func (ms *MySuite) TestMongoStoreCoreFuntionality(c *C) {
 
-	store := mongostore.NewMongoStore(dbSession, "sessions", 3600, true, []byte(mySecretKeyString))
+	options := &sessions.Options{
+		MaxAge: 3600,
+		Path:   "/",
+	}
+	store := mongostore.NewMongoStore(dbSession, "sessions", options, true, true, []byte(mySecretKeyString))
 
 	r, _ := http.NewRequest("GET", url, nil)
 	res := httptest.NewRecorder()

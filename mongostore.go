@@ -31,27 +31,29 @@ type Session struct {
 
 // MongoStore struct contains options and variables to interact with session settings
 type MongoStore struct {
-	Codecs     []securecookie.Codec
-	Options    *sessions.Options
-	Token      TokenGetSeter
-	collection string
-	dbSession  *mgo.Session
+	Codecs         []securecookie.Codec
+	Options        *sessions.Options
+	Token          TokenGetSeter
+	autoUpdateTime bool
+	collection     string
+	dbSession      *mgo.Session
 }
 
 // NewMongoStore returns a new MongoStore.
 // Set ensureTTL to true let the database auto-remove expired object by maxAge.
 // This is using *mgo.Session instead of *.mgo.Collection because if the database goes offline and then
 // comes back onlne we will need the session to refresh the database connection.
-func NewMongoStore(s *mgo.Session, collectionName string, maxAge int, ensureTTL bool, keyPairs ...[]byte) *MongoStore {
+// autoUpdateAccessTime - When true the sessions access time will be updated upon every access, even read operations.
+// If false it will only update upon save, or manual intervention within the clients code.
+func NewMongoStore(s *mgo.Session, collectionName string, options *sessions.Options, ensureTTL bool, autoUpdateAccessTime bool, keyPairs ...[]byte) *MongoStore {
 
 	store := &MongoStore{
-		Codecs: securecookie.CodecsFromPairs(keyPairs...),
-		Options: &sessions.Options{
-			MaxAge: maxAge,
-		},
-		Token:      &CookieToken{},
-		dbSession:  s,
-		collection: collectionName,
+		Codecs:         securecookie.CodecsFromPairs(keyPairs...),
+		Options:        options,
+		Token:          &CookieToken{},
+		autoUpdateTime: autoUpdateAccessTime,
+		dbSession:      s,
+		collection:     collectionName,
 	}
 
 	dbSess := s.Copy()
@@ -64,7 +66,7 @@ func NewMongoStore(s *mgo.Session, collectionName string, maxAge int, ensureTTL 
 			Key:         []string{"lastAccessed"},
 			Background:  true,
 			Sparse:      true,
-			ExpireAfter: time.Duration(maxAge) * time.Second,
+			ExpireAfter: time.Duration(options.MaxAge) * time.Second,
 		})
 	}
 
@@ -157,11 +159,14 @@ func (m *MongoStore) load(session *sessions.Session) error {
 		return err
 	}
 
-	accessed := time.Now().UTC()
-	s.LastAccessed = &accessed
+	if m.autoUpdateTime {
 
-	if err = c.UpdateId(s.ID, s); err != nil {
-		return err
+		accessed := time.Now().UTC()
+		s.LastAccessed = &accessed
+
+		if err = c.UpdateId(s.ID, s); err != nil {
+			return err
+		}
 	}
 
 	if err := securecookie.DecodeMulti(session.Name(), s.Data, &session.Values, m.Codecs...); err != nil {
