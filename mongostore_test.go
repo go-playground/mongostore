@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/gorilla/sessions"
-	"gopkg.in/bluesuncorp/mongo-session-store.v2"
+	"gopkg.in/bluesuncorp/mongo-session-store.v3"
 	. "gopkg.in/check.v1"
 	"gopkg.in/mgo.v2"
 )
@@ -71,7 +71,7 @@ func (ms *MySuite) TestMongoStoreCoreFuntionality(c *C) {
 		MaxAge: 3600,
 		Path:   "/",
 	}
-	store := mongostore.NewMongoStore(dbSession, "sessions", options, true, true, []byte(mySecretKeyString))
+	store := mongostore.New(dbSession, "sessions", options, true, true, []byte(mySecretKeyString))
 
 	r, _ := http.NewRequest("GET", url, nil)
 	res := httptest.NewRecorder()
