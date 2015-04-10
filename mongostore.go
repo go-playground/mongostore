@@ -39,13 +39,13 @@ type MongoStore struct {
 	dbSession      *mgo.Session
 }
 
-// NewMongoStore returns a new MongoStore.
+// New returns a new MongoStore.
 // Set ensureTTL to true let the database auto-remove expired object by maxAge.
 // This is using *mgo.Session instead of *.mgo.Collection because if the database goes offline and then
 // comes back onlne we will need the session to refresh the database connection.
 // autoUpdateAccessTime - When true the sessions access time will be updated upon every access, even read operations.
 // If false it will only update upon save, or manual intervention within the clients code.
-func NewMongoStore(s *mgo.Session, collectionName string, options *sessions.Options, ensureTTL bool, autoUpdateAccessTime bool, keyPairs ...[]byte) *MongoStore {
+func New(s *mgo.Session, collectionName string, options *sessions.Options, ensureTTL bool, autoUpdateAccessTime bool, keyPairs ...[]byte) *MongoStore {
 
 	store := &MongoStore{
 		Codecs:         securecookie.CodecsFromPairs(keyPairs...),
@@ -90,9 +90,9 @@ func (m *MongoStore) New(r *http.Request, name string) (*sessions.Session, error
 
 	session.IsNew = true
 
+	var val string
 	var err error
 	var errToken error
-	var val string
 
 	if val, errToken = m.Token.GetToken(r, name); errToken != nil {
 		goto done
@@ -115,9 +115,11 @@ done:
 // Save saves all sessions registered for the current request.
 func (m *MongoStore) Save(r *http.Request, w http.ResponseWriter, session *sessions.Session) error {
 
+	var err error
+
 	if session.Options.MaxAge < 0 {
 
-		if err := m.delete(session); err != nil {
+		if err = m.delete(session); err != nil {
 			return err
 		}
 
@@ -129,17 +131,19 @@ func (m *MongoStore) Save(r *http.Request, w http.ResponseWriter, session *sessi
 		session.ID = bson.NewObjectId().Hex()
 	}
 
-	if err := m.upsert(session); err != nil {
+	if err = m.upsert(session); err != nil {
 		return err
 	}
 
-	encoded, err := securecookie.EncodeMulti(session.Name(), session.ID, m.Codecs...)
-	if err != nil {
+	var encoded string
+
+	if encoded, err = securecookie.EncodeMulti(session.Name(), session.ID, m.Codecs...); err != nil {
 		return err
 	}
 
 	m.Token.SetToken(w, session.Name(), encoded, session.Options)
-	return nil
+
+	return err
 }
 
 func (m *MongoStore) load(session *sessions.Session) error {
@@ -152,10 +156,11 @@ func (m *MongoStore) load(session *sessions.Session) error {
 	defer dbSess.Close()
 
 	c := dbSess.DB("").C(m.collection)
-	var s *Session
 
-	err := c.FindId(bson.ObjectIdHex(session.ID)).One(&s)
-	if err != nil {
+	var s *Session
+	var err error
+
+	if err = c.FindId(bson.ObjectIdHex(session.ID)).One(&s); err != nil {
 		return err
 	}
 
@@ -169,7 +174,7 @@ func (m *MongoStore) load(session *sessions.Session) error {
 		}
 	}
 
-	if err := securecookie.DecodeMulti(session.Name(), s.Data, &session.Values, m.Codecs...); err != nil {
+	if err = securecookie.DecodeMulti(session.Name(), s.Data, &session.Values, m.Codecs...); err != nil {
 		return err
 	}
 
@@ -195,8 +200,10 @@ func (m *MongoStore) upsert(session *sessions.Session) error {
 		accessed = time.Now().UTC()
 	}
 
-	encoded, err := securecookie.EncodeMulti(session.Name(), session.Values, m.Codecs...)
-	if err != nil {
+	var encoded string
+	var err error
+
+	if encoded, err = securecookie.EncodeMulti(session.Name(), session.Values, m.Codecs...); err != nil {
 		return err
 	}
 
@@ -211,8 +218,7 @@ func (m *MongoStore) upsert(session *sessions.Session) error {
 
 	c := dbSess.DB("").C(m.collection)
 
-	_, err = c.UpsertId(s.ID, &s)
-	if err != nil {
+	if _, err = c.UpsertId(s.ID, &s); err != nil {
 		return err
 	}
 
