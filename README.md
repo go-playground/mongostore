@@ -1,28 +1,28 @@
 # mongo-session-store
 Gorilla's session store implementation using MongoDB
 
-[![Build Status](https://travis-ci.org/joeybloggs/mongo-session-store.svg?branch=v2)](https://travis-ci.org/joeybloggs/mongo-session-store)
-[![GoDoc](https://godoc.org/gopkg.in/joeybloggs/mongo-session-store.v2?status.svg)](https://godoc.org/gopkg.in/joeybloggs/mongo-session-store.v2)
+[![Build Status](https://travis-ci.org/bluesuncorp/mongo-session-store.svg?branch=v2)](https://travis-ci.org/bluesuncorp/mongo-session-store)
+[![GoDoc](https://godoc.org/gopkg.in/bluesuncorp/mongo-session-store.v2?status.svg)](https://godoc.org/gopkg.in/bluesuncorp/mongo-session-store.v2)
 
 Installation
 ============
 
 Just use go get.
 
-	go get gopkg.in/joeybloggs/mongo-session-store.v2
+	go get gopkg.in/bluesuncorp/mongo-session-store.v2
 
 or to update
 
-	go get -u gopkg.in/joeybloggs/mongo-session-store.v2
+	go get -u gopkg.in/bluesuncorp/mongo-session-store.v2
 
 And then just import the package into your own code.
 
-	import "gopkg.in/joeybloggs/mongo-session-store.v2"
+	import "gopkg.in/bluesuncorp/mongo-session-store.v2"
 
 Usage
 =====
 
-Please see http://godoc.org/gopkg.in/joeybloggs/mongo-session-store.v2 for detailed usage docs.
+Please see http://godoc.org/gopkg.in/bluesuncorp/mongo-session-store.v2 for detailed usage docs.
 
 Contributing
 ============
