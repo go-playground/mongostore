@@ -17,7 +17,7 @@ Example Usage:
         }
         defer dbSess.Close()
 
-        store := mongostore.NewMongoStore(dbSess, "sessions", 3600, true,
+        store := mongostore.New(dbSess, "sessions", 3600, true,
             []byte("secret-key"))
 
         // Get a session.
