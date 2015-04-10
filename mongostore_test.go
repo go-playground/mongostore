@@ -8,7 +8,8 @@ import (
 	"time"
 
 	"github.com/gorilla/sessions"
-	"gopkg.in/bluesuncorp/mongo-session-store.v2"
+	"github.com/joeybloggs/mongo-session-store"
+
 	. "gopkg.in/check.v1"
 	"gopkg.in/mgo.v2"
 )
