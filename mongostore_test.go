@@ -71,7 +71,7 @@ func (ms *MySuite) TestMongoStoreCoreFuntionality(c *C) {
 		MaxAge: 3600,
 		Path:   "/",
 	}
-	store := mongostore.NewMongoStore(dbSession, "sessions", options, true, true, []byte(mySecretKeyString))
+	store := mongostore.New(dbSession, "sessions", options, true, true, []byte(mySecretKeyString))
 
 	r, _ := http.NewRequest("GET", url, nil)
 	res := httptest.NewRecorder()
