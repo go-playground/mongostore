@@ -1,28 +1,28 @@
-# mongo-session-store
+# mongostore
 Gorilla's session store implementation using MongoDB
 
-[![Build Status](https://travis-ci.org/bluesuncorp/mongo-session-store.svg?branch=v3)](https://travis-ci.org/bluesuncorp/mongo-session-store)
-[![GoDoc](https://godoc.org/gopkg.in/bluesuncorp/mongo-session-store.v3?status.svg)](https://godoc.org/gopkg.in/bluesuncorp/mongo-session-store.v3)
+[![Build Status](https://travis-ci.org/bluesuncorp/mongostore.svg?branch=v4)](https://travis-ci.org/bluesuncorp/mongostore)
+[![GoDoc](https://godoc.org/gopkg.in/bluesuncorp/mongostore.v4?status.svg)](https://godoc.org/gopkg.in/bluesuncorp/mongostore.v4)
 
 Installation
 ============
 
 Just use go get.
 
-	go get gopkg.in/bluesuncorp/mongo-session-store.v3
+	go get gopkg.in/bluesuncorp/mongostore.v4
 
 or to update
 
-	go get -u gopkg.in/bluesuncorp/mongo-session-store.v3
+	go get -u gopkg.in/bluesuncorp/mongostore.v4
 
 And then just import the package into your own code.
 
-	import "gopkg.in/bluesuncorp/mongo-session-store.v3"
+	import "gopkg.in/bluesuncorp/mongostore.v4"
 
 Usage
 =====
 
-Please see http://godoc.org/gopkg.in/bluesuncorp/mongo-session-store.v3 for detailed usage docs.
+Please see http://godoc.org/gopkg.in/bluesuncorp/mongostore.v4 for detailed usage docs.
 
 Contributing
 ============
