@@ -37,5 +37,18 @@ Example Usage:
         fmt.Fprintln(w, "ok")
     }
 
+Updating Cookie and MongoDB Expiry Times
+
+    if you need your cookies to be rolling and update with every access and
+    not just modifications you can call:
+
+    // Get a session.
+    session, err := store.GetAndUpdateAccessTime(r, w, "session-key")
+
+    instead of
+
+    // Get a session.
+    session, err := store.Get(r, "session-key")
+
 */
 package mongostore
