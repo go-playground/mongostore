@@ -71,13 +71,13 @@ func (ms *MySuite) TestMongoStoreCoreFuntionality(c *C) {
 		MaxAge: 3600,
 		Path:   "/",
 	}
-	store := mongostore.New(dbSession, "sessions", options, true, true, []byte(mySecretKeyString))
+	store := mongostore.New(dbSession, "sessions", options, true, []byte(mySecretKeyString))
 
 	r, _ := http.NewRequest("GET", url, nil)
 	res := httptest.NewRecorder()
 
 	// Get a session.
-	session, err := store.Get(r, mySessionKey)
+	session, err := store.GetAndUpdateAccessTime(r, res, mySessionKey)
 	c.Assert(err, IsNil)
 
 	// Attempt to retrieve flash messages
