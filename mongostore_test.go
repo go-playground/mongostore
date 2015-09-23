@@ -1,17 +1,28 @@
-package mongostore_test
+package mongostore
 
 import (
 	"encoding/gob"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/gorilla/sessions"
-	"gopkg.in/bluesuncorp/mongostore.v4"
-	. "gopkg.in/check.v1"
+	. "gopkg.in/bluesuncorp/assert.v1"
 	"gopkg.in/mgo.v2"
 )
+
+// NOTES:
+// - Run "go test" to run tests
+// - Run "gocov test | gocov report" to report on test converage by file
+// - Run "gocov test | gocov annotate -" to report on all code and functions, those ,marked with "MISS" were never called
+//
+// or
+//
+// -- may be a good idea to change to output path to somewherelike /tmp
+// go test -coverprofile cover.out && go tool cover -html=cover.out -o cover.html
+//
 
 const (
 	mySecretKeyString = "ISwearByMyPrettyFloralBonnetIWillEndYou"
@@ -21,33 +32,29 @@ const (
 	DatabaseName      = "session-db"
 )
 
-func Test(t *testing.T) { TestingT(t) }
-
-type MySuite struct{}
-
-var _ = Suite(&MySuite{})
+var (
+	dbSession    *mgo.Session
+	dbConnString = "127.0.0.1:27017"
+)
 
 type FlashMessage struct {
 	Type    int
 	Message string
 }
 
-var dbSession *mgo.Session
+func TestMain(m *testing.M) {
 
-func (s *MySuite) SetUpSuite(c *C) {
-
+	// setup
 	gob.Register(FlashMessage{})
 
 	dbInfo := &mgo.DialInfo{
-		Addrs:    []string{"127.0.0.1:27017"},
+		Addrs:    []string{dbConnString},
 		Timeout:  60 * time.Second,
 		Database: DatabaseName,
 	}
 
-	var err error
 	// Create a session which maintains a pool of socket connections to our MongoDB
-	dbSession, err = mgo.DialWithInfo(dbInfo)
-	c.Assert(err, IsNil)
+	dbSession, _ = mgo.DialWithInfo(dbInfo)
 
 	dbSession.SetMode(mgo.Monotonic, true)
 
@@ -56,33 +63,35 @@ func (s *MySuite) SetUpSuite(c *C) {
 
 	database := dbSess.DB("")
 
-	names, err := database.CollectionNames()
-	c.Assert(err, IsNil)
+	names, _ := database.CollectionNames()
 
 	for _, val := range names {
 		_ = database.C(val).DropCollection()
 	}
 
+	os.Exit(m.Run())
+
+	// teardown
 }
 
-func (ms *MySuite) TestMongoStoreCoreFuntionality(c *C) {
+func TestMongoStoreCoreFuntionality(t *testing.T) {
 
 	options := &sessions.Options{
 		MaxAge: 3600,
 		Path:   "/",
 	}
-	store := mongostore.New(dbSession, "sessions", options, true, []byte(mySecretKeyString))
+	store := New(dbSession, "sessions", options, true, []byte(mySecretKeyString))
 
 	r, _ := http.NewRequest("GET", url, nil)
 	res := httptest.NewRecorder()
 
 	// Get a session.
 	session, err := store.GetAndUpdateAccessTime(r, res, mySessionKey)
-	c.Assert(err, IsNil)
+	Equal(t, err, nil)
 
 	// Attempt to retrieve flash messages
 	flashMessages := session.Flashes()
-	c.Assert(len(flashMessages), Equals, 0)
+	Equal(t, len(flashMessages), 0)
 
 	// Add flash messages
 	session.AddFlash("foo")
@@ -93,12 +102,12 @@ func (ms *MySuite) TestMongoStoreCoreFuntionality(c *C) {
 
 	// Save.
 	err = sessions.Save(r, res)
-	c.Assert(err, IsNil)
+	Equal(t, err, nil)
 
 	header := res.Header()
 	cookies, ok := header["Set-Cookie"]
-	c.Assert(ok, Equals, true)
-	c.Assert(len(cookies), Equals, 1)
+	Equal(t, ok, true)
+	Equal(t, len(cookies), 1)
 
 	r, _ = http.NewRequest("GET", url, nil)
 	r.Header.Add("Cookie", cookies[0])
@@ -106,65 +115,66 @@ func (ms *MySuite) TestMongoStoreCoreFuntionality(c *C) {
 
 	// Get session.
 	session, err = store.Get(r, mySessionKey)
-	c.Assert(err, IsNil)
+	Equal(t, err, nil)
 
 	flashMessages = session.Flashes()
-	c.Assert(len(flashMessages), Equals, 2)
-	c.Assert(flashMessages[0], Equals, "foo")
-	c.Assert(flashMessages[1], Equals, "bar")
+	Equal(t, len(flashMessages), 2)
+	Equal(t, flashMessages[0], "foo")
+	Equal(t, flashMessages[1], "bar")
 
 	flashMessages = session.Flashes()
-	c.Assert(len(flashMessages), Equals, 0)
+	Equal(t, len(flashMessages), 0)
 
 	// test custom key
 	flashMessages = session.Flashes(myCustomKey)
-	c.Assert(len(flashMessages), Equals, 1)
-	c.Assert(flashMessages[0], Equals, "baz")
+	Equal(t, len(flashMessages), 1)
+	Equal(t, flashMessages[0], "baz")
 
 	flashMessages = session.Flashes(myCustomKey)
-	c.Assert(len(flashMessages), Equals, 0)
+	Equal(t, len(flashMessages), 0)
 
 	session.Options.MaxAge = -1
 
 	err = sessions.Save(r, res)
-	c.Assert(err, IsNil)
+	Equal(t, err, nil)
 
 	r, _ = http.NewRequest("GET", url, nil)
 	res = httptest.NewRecorder()
 
 	session, err = store.Get(r, mySessionKey)
-	c.Assert(err, IsNil)
+	Equal(t, err, nil)
 
 	flashMessages = session.Flashes()
-	c.Assert(len(flashMessages), Equals, 0)
+	Equal(t, len(flashMessages), 0)
 
 	session.AddFlash(&FlashMessage{42, "foo"})
 
 	err = sessions.Save(r, res)
-	c.Assert(err, IsNil)
+	Equal(t, err, nil)
 
 	header = res.Header()
 	cookies, ok = header["Set-Cookie"]
-	c.Assert(ok, Equals, true)
-	c.Assert(len(cookies), Equals, 1)
+	Equal(t, ok, true)
+	Equal(t, len(cookies), 1)
 
 	r, _ = http.NewRequest("GET", "http://localhost:8080/", nil)
 	r.Header.Add("Cookie", cookies[0])
 	res = httptest.NewRecorder()
 
 	session, err = store.Get(r, mySessionKey)
-	c.Assert(err, IsNil)
+	Equal(t, err, nil)
 
 	flashMessages = session.Flashes()
-	c.Assert(len(flashMessages), Equals, 1)
+	Equal(t, len(flashMessages), 1)
 
 	customFlashMessage := flashMessages[0].(FlashMessage)
-	c.Assert(customFlashMessage.Type, Equals, 42)
-	c.Assert(customFlashMessage.Message, Equals, "foo")
+	Equal(t, customFlashMessage.Type, 42)
+	Equal(t, customFlashMessage.Message, "foo")
 
 	// Delete session.
 	session.Options.MaxAge = -1
 
 	err = sessions.Save(r, res)
-	c.Assert(err, IsNil)
+	Equal(t, err, nil)
+
 }
