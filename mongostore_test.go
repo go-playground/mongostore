@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/gorilla/sessions"
-	. "gopkg.in/bluesuncorp/assert.v1"
+	. "gopkg.in/go-playground/assert.v1"
 	"gopkg.in/mgo.v2"
 )
 
